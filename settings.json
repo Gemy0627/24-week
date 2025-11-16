@@ -1,14 +1,14 @@
 {
   "bot-account": {
-    "username": "AFKBot", 
+    "username": "AFKBot",
     "password": "",
     "type": "mojang"
   },
 
   "server": {
-    "ip": "Flins_comehome.aternos.me", 
-    "port": 38656,   
-    "version": "1.12.1"   
+    "ip": "Flins_comehome.aternos.me",
+    "port": 38656,
+    "version": "1.12.1"
   },
   
   "position": {
@@ -26,7 +26,7 @@
 
     "anti-afk": {
       "enabled": true,
-      "jump":true,
+      "jump": false,
       "sneak": false
     },
 
@@ -34,7 +34,6 @@
       "enabled": false,
       "repeat": true,
       "repeat-delay": 60,
-
       "messages": [
         "I'm a regular player",
         "Subscibe To Slobos!",
