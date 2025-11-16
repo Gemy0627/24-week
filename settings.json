@@ -26,7 +26,6 @@
 
     "anti-afk": {
       "enabled": true,
-      "mine": true,
       "sneak": false
     },
 
