@@ -9,71 +9,62 @@ const express = require('express');
 const app = express();
 
 app.get('/', (req, res) => {
-  res.send('Bot is running.');
+  res.send('Bot is active.');
 });
 
-app.listen(8000, () => {
-  console.log('Web server running on port 8000');
-});
+app.listen(8000, () => console.log("Webserver online"));
 
 function createBot() {
   const bot = mineflayer.createBot({
-    username: config['bot-account']['username'],
-    password: config['bot-account']['password'],
-    auth: config['bot-account']['type'],
+    username: config['bot-account'].username,
+    auth: config['bot-account'].type,
+    password: config['bot-account'].password,
     host: config.server.ip,
     port: config.server.port,
-    version: config.server.version // false = auto-detect
+    version: config.server.version
   });
 
   bot.loadPlugin(pathfinder);
 
   bot.once('spawn', () => {
-    console.log('[AfkBot] Bot joined the server');
+    console.log("[AFK] Bot spawned.");
 
-    const mcData = require('minecraft-data')(bot.version);
-    const defaultMove = new Movements(bot, mcData);
+    const mcData = require("minecraft-data")(bot.version);
+    bot.pathfinder.setMovements(new Movements(bot, mcData));
 
-    // --- AUTO AUTH ---
-    if (config.utils['auto-auth'].enabled) {
-      const pwd = config.utils['auto-auth'].password;
-      bot.chat(`/register ${pwd} ${pwd}`);
-      bot.chat(`/login ${pwd}`);
-    }
-
-    // --- ANTI AFK ---
-    if (config.utils['anti-afk'].enabled) {
-      if (config.utils['anti-afk'].jump) bot.setControlState('jump', true);
-      if (config.utils['anti-afk'].sneak) bot.setControlState('sneak', true);
-    }
-
-    // --- MOVE TO COORDINATES ---
+    // Move to AFK position
     if (config.position.enabled) {
       const pos = config.position;
-      console.log(`[AfkBot] Moving to (${pos.x}, ${pos.y}, ${pos.z})`);
-
-      bot.pathfinder.setMovements(defaultMove);
       bot.pathfinder.setGoal(new GoalBlock(pos.x, pos.y, pos.z));
     }
+
+    // human-like idle behavior loop
+    setInterval(() => {
+      // Small random head movement
+      const yaw = bot.entity.yaw + (Math.random() * 0.6 - 0.3);
+      const pitch = bot.entity.pitch + (Math.random() * 0.4 - 0.2);
+      bot.look(yaw, pitch, false);
+
+      // very small chance of taking a step
+      if (Math.random() < 0.25) {
+        let dir = ["forward", "back", "left", "right"][Math.floor(Math.random() * 4)];
+        bot.setControlState(dir, true);
+        setTimeout(() => bot.setControlState(dir, false), 300 + Math.random() * 400);
+      }
+    }, 30000 + Math.random() * 30000); // every 30–60 seconds
   });
 
-  // --- STOP MOVING WHEN GOAL REACHED ---
-  bot.on('goal_reached', () => {
-    console.log(`[AfkBot] Arrived at target: ${bot.entity.position}`);
+  bot.on("goal_reached", () => {
     bot.pathfinder.setGoal(null);
     bot.clearControlStates();
   });
 
-  // --- AUTO RECONNECT ---
-  if (config.utils['auto-reconnect']) {
-    bot.on('end', () => {
-      console.log('[AfkBot] Disconnected — reconnecting...');
-      setTimeout(createBot, config.utils['auto-recconect-delay']);
-    });
-  }
+  bot.on("end", () => {
+    setTimeout(createBot, config.utils["auto-recconect-delay"]);
+  });
 
-  bot.on('kicked', reason => console.log(`[AfkBot] Kicked: ${reason}`));
-  bot.on('error', err => console.log(`[ERROR] ${err}`));
+  bot.on("kicked", r => console.log("[Kick]", r));
+  bot.on("error", e => console.log("[Error]", e));
 }
 
 createBot();
